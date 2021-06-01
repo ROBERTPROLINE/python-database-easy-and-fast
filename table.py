@@ -3,8 +3,9 @@ import os
 import threading
 
 
+#####################################################################################################
 def create(tables,mytable,details):
-    try:
+    
         #db.table.create->transactions->;userid,text;trid,text;tramt,double;trdetails,text
         #print('Table creating started')
 
@@ -15,31 +16,49 @@ def create(tables,mytable,details):
             file = open(path,'w')
             file.close()
             #print('data file created')
+           
             frmdetails = 'data//data//{}.frm.r'.format(mytable) 
-            file = open(frmdetails,'w')
-            for crz in details.split(';'):
-                print(crz)
-                crzcode = '{};{}\n'.format(crz.split(',')[0],crz.split(',')[1])
-                file.write(crzcode)
-            file.close()
+            file = open(frmdetails,'a')
+            try:
+                for crz in details.split(';'):
+                    #print(crz)
+                    crzcode = '{};{}\n'.format(crz.split(',')[0],crz.split(',')[1])
+                    file.write(crzcode)
+                file.close()
+            except Exception as ex:
+                ignore = True
             #print('CRZ file created')
             frmlst = 'data//frm//frm.list'
             file = open(frmlst,'a')
             file.write('{}\n'.format(mytable))
             #print('form added to form list')
         #database.reload_tables()
+  
+
+
+def show():
+    try:
+        tblist = []
+        frmlst = 'data//frm//frm.list'
+        file = open(frmlst,'r')
+        for tablename in file.readlines():
+            tblist.append(tablename[:-1])
+        file.close()
     except Exception as ex:
         print(ex)
+        #also read data from tables
 
+    return tblist
 
+def describe(tables,mytable):
+    return tables[mytable][1]
 
-def alter(table,alterations):
+def alter(tables,mytable,alterations):
 	pass
 
 def drop(table):
-	
     pass
-
+###############################################################################################
 def select(tables,mytable,data):
     if data == 'all':
         return tables[mytable][2]
@@ -74,11 +93,10 @@ def select(tables,mytable,data):
 def update(tables,mytable,rdata,updates):
     #db.user.update->#rdata#username,var1;password,var2->#updates#username,varx;password,varxy
     #data####username,robert;password,admin->currentamt,60
-
     
     try:
         datalist = select(tables,mytable,rdata)
-        print(datalist)
+        #print(datalist)
         if len(datalist) >= 1:
             if ';' in updates:
                 updlist = updates.split(';')
@@ -87,7 +105,7 @@ def update(tables,mytable,rdata,updates):
                         var = condition.split(',')[0]
                         vrx = condition.split(',')[1]
                         rcrdz[var] = vrx
-                print(datalist)
+         #       print(datalist)
                 for i in tables[mytable][2]:
                     i.update(datalist)
             else:
@@ -95,15 +113,17 @@ def update(tables,mytable,rdata,updates):
                     var = updates.split(',')[0]
                     vrx = updates.split(',')[1]
                     rcrdz[var] = vrx
-                print(datalist)
+          #      print(datalist)
                 for i in tables[mytable][2]:
                     i.update(datalist)
         else:
-            print('No rows changes')
+          return 'No rows changes'
     except Exception as ex:
         print(ex)
         return None
-    commit(tables)
+
+    #t1 = threading.Thread(commit(tables))
+    #t1.start()
         
         
 def insert(tables,mytable,data):
@@ -127,10 +147,12 @@ def insert(tables,mytable,data):
                     return 'Count Error'
                 
                 #print(data.split(',')[ln])
+                
                 nvalue = ''
-                datatype = tables[mytable][1][ln].split(';')[1]
+                #datatype = tables[mytable][1][ln].split(';')[1]
                 #print(datatype)
-                if datatype == 'double':
+
+                if tables[mytable][1][ln].split(';')[1] == 'double':
                     try:
                         nvalue = float(data.split(',')[ln])
                     except Exception as ex:
@@ -141,18 +163,18 @@ def insert(tables,mytable,data):
                 #print('new record : ',newrecord)
             
             tables[mytable][2].append(newrecord)
-            return 'Ok [1 row added]'
+            #print('Ok [1 row added]')
                         
                 #else:
                     #if 'unique' in tables[mytable][1][ln]:
                     #    if tables[mytable][2][data.split(',')[ln]] != None:
                     #        return 'Constraint Error [Unique]'
-        commit(tables)
+        #t1 = threading.Thread(commit(tables))
+        #t1.start()
     except Exception as ex:
         print(ex)
 
 def commit(tables):
-    
     try:
         for tbl,complx in tables.items():
             tbl_loc = complx[0]
@@ -170,10 +192,22 @@ def commit(tables):
         return 'Commit Error [100]'
         
 
-def remove():
-    pass
-
-
+def remove(tables,mytable,data):
+    try:
+        datalist = select(tables,mytable,data)
+        if len(datalist) > 0:
+            for rcrdz in datalist:
+                #print('#############################')
+                #print(tables[mytable][2])
+                #print('#############################')
+                #print(rcrdz)
+                tables[mytable][2].remove(rcrdz)
+            commit(tables)
+        else:
+            return 'No rows changed [200]'
+    except Exception as ex:
+        print(ex)
+        return None
 
 ##################################
 
@@ -183,5 +217,4 @@ def _select_update():
 
 def _insert_irr():
     pass
-
     
